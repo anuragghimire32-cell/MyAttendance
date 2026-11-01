@@ -1,0 +1,1555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MyAttendance - Student Attendance Tracker</title>
+  <!-- Tailwind CSS Config Script (Set up object before or after script loads) -->
+  <script>
+    window.tailwind = window.tailwind || {};
+    window.tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#fdf4ff',
+              100: '#fae8ff',
+              500: '#d946ef',
+              600: '#c026d3',
+              700: '#a21caf',
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      -webkit-tap-highlight-color: transparent;
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #e2e8f0;
+      border-radius: 999px;
+    }
+    .insta-gradient {
+      background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    }
+    .cal-day-holiday {
+      background-color: #fee2e2;
+      color: #b91c1c;
+      cursor: not-allowed;
+      opacity: 0.75;
+      position: relative;
+    }
+    .cal-day-selected {
+      background-color: #ec4899 !important;
+      color: white !important;
+      font-weight: 800 !important;
+      box-shadow: 0 4px 10px rgba(236, 72, 153, 0.4);
+    }
+    .cal-day-noclass {
+      background-color: #fef3c7;
+      color: #92400e;
+      cursor: not-allowed;
+      opacity: 0.85;
+      position: relative;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans min-h-screen flex flex-col antialiased">
+
+  <!-- Toast Notification -->
+  <div id="toastContainer" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- ================= AUTH CONTAINER (INSTA STYLE LOGIN / SIGNUP) ================= -->
+  <div id="authScreen" class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 bg-gradient-to-b from-slate-100 via-white to-pink-50/30">
+    <div class="w-full max-w-sm sm:max-w-md">
+      
+      <!-- App Brand Logo Card -->
+      <div class="text-center mb-6">
+        <div class="inline-flex p-3 rounded-2xl insta-gradient shadow-lg shadow-pink-500/20 text-white text-3xl mb-3">
+          <i class="ph ph-check-square-offset"></i>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-pink-600 via-rose-600 to-amber-600 bg-clip-text text-transparent">MyAttendance</h1>
+        <p class="text-xs sm:text-sm text-slate-500 mt-1">Track your class attendance effortlessly</p>
+      </div>
+
+      <!-- Auth Main Box -->
+      <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden p-6 sm:p-8">
+        
+        <!-- Toggle Tabs: Login vs Sign Up -->
+        <div class="flex bg-slate-100 p-1 rounded-2xl mb-6">
+          <button id="tabBtnLogin" onclick="switchAuthTab('login')" class="flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all duration-200 bg-white text-slate-900 shadow-sm">
+            Log In
+          </button>
+          <button id="tabBtnSignup" onclick="switchAuthTab('signup')" class="flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all duration-200 text-slate-500 hover:text-slate-800">
+            Sign Up
+          </button>
+        </div>
+
+        <!-- Feedback Alert -->
+        <div id="authAlert" class="hidden mb-4 p-3 rounded-xl text-xs font-semibold"></div>
+
+        <!-- ================= LOGIN FORM ================= -->
+        <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Username or Roll No</label>
+            <div class="relative">
+              <i class="ph ph-user absolute left-3.5 top-3 text-slate-400 text-lg"></i>
+              <input type="text" id="loginUsername" required placeholder="e.g. CSE-24 or john_doe" class="w-full bg-slate-50 border border-slate-200 focus:border-pink-500 focus:bg-white text-sm rounded-xl pl-10 pr-4 py-2.5 outline-none transition font-medium">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Password</label>
+            <div class="relative">
+              <i class="ph ph-lock-key absolute left-3.5 top-3 text-slate-400 text-lg"></i>
+              <input type="password" id="loginPassword" required placeholder="Your password" class="w-full bg-slate-50 border border-slate-200 focus:border-pink-500 focus:bg-white text-sm rounded-xl pl-10 pr-10 py-2.5 outline-none transition font-medium">
+              <button type="button" onclick="togglePass('loginPassword', 'loginEye')" class="absolute right-3.5 top-3 text-slate-400 hover:text-slate-600">
+                <i id="loginEye" class="ph ph-eye text-lg"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-xs pt-1">
+            <span class="text-slate-400">First time here?</span>
+            <button type="button" onclick="switchAuthTab('signup')" class="text-pink-600 font-bold hover:underline">
+              Create an account
+            </button>
+          </div>
+
+          <button type="submit" class="w-full py-3 insta-gradient hover:opacity-95 text-white font-bold rounded-xl text-sm shadow-lg shadow-pink-500/25 transition-transform active:scale-[0.98] flex items-center justify-center gap-2">
+            <span>Log In</span>
+            <i class="ph ph-arrow-right font-bold"></i>
+          </button>
+        </form>
+
+        <!-- ================= SIGN UP FORM ================= -->
+        <form id="signupForm" onsubmit="handleSignup(event)" class="hidden space-y-3.5">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Full Name</label>
+            <div class="relative">
+              <i class="ph ph-identification-card absolute left-3 top-2.5 text-slate-400 text-lg"></i>
+              <input type="text" id="regFullName" required placeholder="e.g. Rahul Sharma" class="w-full bg-slate-50 border border-slate-200 focus:border-pink-500 focus:bg-white text-sm rounded-xl pl-9 pr-3.5 py-2 outline-none transition font-medium">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Username / Roll No</label>
+            <div class="relative">
+              <i class="ph ph-at absolute left-3 top-2.5 text-slate-400 text-lg"></i>
+              <input type="text" id="regUsername" required placeholder="e.g. rahul_24 or CSE-45" class="w-full bg-slate-50 border border-slate-200 focus:border-pink-500 focus:bg-white text-sm rounded-xl pl-9 pr-3.5 py-2 outline-none transition font-medium">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Select Branch</label>
+            <select id="regBranch" onchange="previewBranchSubjects()" class="w-full bg-slate-50 border border-slate-200 focus:border-pink-500 focus:bg-white text-sm rounded-xl px-3 py-2 outline-none transition font-medium text-slate-700">
+              <option value="CSE">Computer Science & Engineering (CSE)</option>
+              <option value="ME">Mechanical Engineering (ME)</option>
+              <option value="CE">Civil Engineering (CE)</option>
+            </select>
+          </div>
+
+          <!-- Subjects Auto-Preview Badge List -->
+          <div class="bg-pink-50/60 border border-pink-100 rounded-xl p-2.5">
+            <span class="block text-[11px] font-bold text-pink-700 mb-1">Your Curriculum Subjects:</span>
+            <div id="subjectTagsPreview" class="flex flex-wrap gap-1">
+              <!-- Populated by previewBranchSubjects -->
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Password</label>
+              <input type="password" id="regPassword" required placeholder="Min 4 chars" class="w-full bg-slate-50 border border-slate-200 focus:border-pink-500 focus:bg-white text-xs sm:text-sm rounded-xl px-3 py-2 outline-none transition font-medium">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Confirm</label>
+              <input type="password" id="regConfirmPassword" required placeholder="Repeat" class="w-full bg-slate-50 border border-slate-200 focus:border-pink-500 focus:bg-white text-xs sm:text-sm rounded-xl px-3 py-2 outline-none transition font-medium">
+            </div>
+          </div>
+
+          <div class="pt-1">
+            <button type="submit" class="w-full py-3 insta-gradient hover:opacity-95 text-white font-bold rounded-xl text-sm shadow-lg shadow-pink-500/25 transition-transform active:scale-[0.98] flex items-center justify-center gap-2">
+              <span>Sign Up & Start</span>
+              <i class="ph ph-sparkle font-bold"></i>
+            </button>
+          </div>
+        </form>
+
+      </div>
+
+      <!-- Footer Info -->
+      <p class="text-center text-xs text-slate-400 mt-6">
+        Private student dashboard. All attendance data is stored exclusively in your browser.
+      </p>
+    </div>
+  </div>
+
+  <!-- ================= STUDENT ATTENDANCE DASHBOARD ================= -->
+  <div id="dashboardScreen" class="hidden flex-col flex-grow">
+    
+    <!-- Top Bar -->
+    <header class="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        
+        <div class="flex items-center space-x-3">
+          <div class="w-9 h-9 rounded-xl insta-gradient flex items-center justify-center text-white text-xl shadow-md shadow-pink-500/20 font-bold">
+            <i class="ph ph-check-square-offset"></i>
+          </div>
+          <div>
+            <h1 class="text-base font-extrabold text-slate-900 tracking-tight leading-none">MyAttendance</h1>
+            <p class="text-[11px] font-semibold text-slate-400 mt-0.5" id="userBranchBadge">CSE Branch</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 sm:gap-3">
+          <div class="text-right hidden sm:block">
+            <p class="text-xs font-bold text-slate-800 leading-tight" id="userNameHeader">Student Name</p>
+            <p class="text-[10px] text-pink-600 font-semibold" id="userHandleHeader">@handle</p>
+          </div>
+          <button onclick="handleLogout()" class="px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-xl transition flex items-center gap-1">
+            <i class="ph ph-sign-out text-sm"></i>
+            <span class="hidden sm:inline">Log Out</span>
+          </button>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 py-6 w-full flex-grow space-y-6">
+
+      <!-- Overall Attendance Summary Banner -->
+      <div class="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200 shadow-sm relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
+        
+        <div class="space-y-1 relative z-10">
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-pink-50 border border-pink-100 text-pink-700">
+            <span class="w-2 h-2 rounded-full bg-pink-500 animate-pulse"></span>
+            <span>Personal Attendance Target: 75%</span>
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900" id="welcomeUserGreeting">Welcome Back!</h2>
+          <p class="text-xs sm:text-sm text-slate-500 max-w-md">Track individual subject metrics and make sure you remain eligible for the semester examinations.</p>
+        </div>
+
+        <!-- Big Radial / Gauge Stat -->
+        <div class="flex items-center gap-4 bg-slate-50 border border-slate-200/80 rounded-2xl p-4 min-w-[240px] relative z-10">
+          <div class="w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl text-white shadow-md shadow-pink-500/20" id="totalPctBadge">
+            0%
+          </div>
+          <div>
+            <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Overall Rate</p>
+            <p class="text-xs font-semibold text-slate-700 mt-0.5"><span id="totalAttendedCount">0</span> of <span id="totalHeldCount">0</span> lectures</p>
+            <p class="text-[11px] font-extrabold mt-0.5" id="eligibilityVerdict">Calculating...</p>
+          </div>
+        </div>
+
+        <div class="absolute -right-10 -bottom-10 w-44 h-44 bg-pink-100/40 rounded-full blur-2xl pointer-events-none"></div>
+      </div>
+
+      <!-- Quick Action Toolbar -->
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="flex items-center gap-2">
+          <i class="ph ph-books text-pink-600 text-xl"></i>
+          <div>
+            <h3 class="text-sm font-bold text-slate-900 leading-tight">My Subjects Breakdown</h3>
+            <p class="text-[11px] text-slate-400">Click Present or Absent to choose calendar dates (Holidays restricted)</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap">
+          <button onclick="openTimetableModal()" class="px-3 py-1.5 text-xs font-bold text-amber-800 hover:bg-amber-100 bg-amber-50 rounded-xl transition flex items-center gap-1.5 border border-amber-200">
+            <i class="ph ph-clock font-bold"></i>
+            <span>Class Timetable</span>
+          </button>
+          <button onclick="openHolidaysModal()" class="px-3 py-1.5 text-xs font-bold text-pink-700 hover:bg-pink-50 bg-pink-50/50 rounded-xl transition flex items-center gap-1.5 border border-pink-200">
+            <i class="ph ph-calendar-check font-bold"></i>
+            <span>DTE Holidays List</span>
+          </button>
+          <button onclick="promptResetAllSubjects()" class="px-3 py-1.5 text-xs font-bold text-slate-600 hover:text-rose-600 bg-slate-100 hover:bg-rose-50 rounded-xl transition flex items-center justify-center gap-1.5 border border-slate-200">
+            <i class="ph ph-arrow-counter-clockwise"></i>
+            <span>Reset All</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Grid of Subject Cards -->
+      <div id="subjectsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Rendered dynamically based on branch -->
+      </div>
+
+      <!-- Log / History Timeline (Recent Taps) -->
+      <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <i class="ph ph-clock-counter-clockwise text-pink-600 text-lg"></i>
+            <h4 class="text-sm font-bold text-slate-900">Recent Attendance Logs</h4>
+          </div>
+          <button onclick="clearHistoryLogs()" class="text-xs font-bold text-slate-400 hover:text-rose-600 transition">Clear History</button>
+        </div>
+
+        <div id="logsContainer" class="space-y-2 max-h-48 overflow-y-auto">
+          <!-- Filled dynamically -->
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-4 text-center text-xs text-slate-400 border-t border-slate-200 bg-white">
+      MyAttendance &bull; 100% Free Client-Side Student Tool for InfinityFree Hosting
+    </footer>
+
+  </div>
+
+  <!-- Custom Confirmation Modal (Replaces browser confirm) -->
+  <div id="confirmModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 text-center space-y-4">
+      <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-500 mx-auto flex items-center justify-center text-2xl font-bold">
+        <i class="ph ph-warning-circle"></i>
+      </div>
+      <div>
+        <h3 id="modalTitle" class="text-base font-extrabold text-slate-900">Reset All Attendance?</h3>
+        <p id="modalDesc" class="text-xs text-slate-500 mt-1">This will reset all your attended and missed lecture counts and date records to 0. This action cannot be undone.</p>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="closeConfirmModal(false)" class="flex-1 py-2.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition">
+          Cancel
+        </button>
+        <button onclick="closeConfirmModal(true)" class="flex-1 py-2.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition shadow-md shadow-rose-600/20">
+          Yes, Reset
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= DATE PICKER MODAL (PRESENT / ABSENT SELECTION) ================= -->
+  <div id="datePickerModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh]">
+      
+      <!-- Header -->
+      <div id="datePickerHeader" class="p-5 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <div class="flex items-center gap-2">
+            <span id="datePickerActionBadge" class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">Present</span>
+            <span id="datePickerSubjectName" class="text-xs font-bold text-slate-500">Subject</span>
+          </div>
+          <h3 class="text-lg font-black text-slate-900 mt-1">Select Attendance Dates</h3>
+          <p class="text-[11px] text-slate-400">Select class dates & hit Enter. Holidays & Non-Class days are restricted.</p>
+        </div>
+        <button onclick="closeDatePickerModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition">
+          <i class="ph ph-x font-bold"></i>
+        </button>
+      </div>
+
+      <!-- Quick Date Shortcuts -->
+      <div class="px-5 pt-3 pb-1 flex items-center gap-2 overflow-x-auto text-xs">
+        <button type="button" onclick="selectShortcutDate('today')" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-pink-50 hover:text-pink-600 text-slate-600 font-bold transition whitespace-nowrap">
+          Today
+        </button>
+        <button type="button" onclick="selectShortcutDate('yesterday')" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-pink-50 hover:text-pink-600 text-slate-600 font-bold transition whitespace-nowrap">
+          Yesterday
+        </button>
+        <button type="button" onclick="selectShortcutDate('tomorrow')" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-pink-50 hover:text-pink-600 text-slate-600 font-bold transition whitespace-nowrap">
+          Tomorrow
+        </button>
+        <button type="button" onclick="clearSelectedDates()" class="px-3 py-1.5 rounded-xl text-rose-600 hover:bg-rose-50 font-bold transition ml-auto whitespace-nowrap">
+          Clear
+        </button>
+      </div>
+
+      <!-- Month Navigation -->
+      <div class="px-5 py-2 flex items-center justify-between border-y border-slate-100 bg-slate-50/50">
+        <button type="button" onclick="changeCalMonth(-1)" class="p-1.5 rounded-lg hover:bg-slate-200 text-slate-600 transition">
+          <i class="ph ph-caret-left font-bold text-base"></i>
+        </button>
+        <span id="calMonthYearTitle" class="text-xs font-extrabold uppercase tracking-wider text-slate-700">January 2026</span>
+        <button type="button" onclick="changeCalMonth(1)" class="p-1.5 rounded-lg hover:bg-slate-200 text-slate-600 transition">
+          <i class="ph ph-caret-right font-bold text-base"></i>
+        </button>
+      </div>
+
+      <!-- Calendar Days Body -->
+      <div class="p-5 flex-grow overflow-y-auto">
+        <!-- Weekdays row -->
+        <div class="grid grid-cols-7 gap-1 text-center mb-2">
+          <span class="text-[10px] font-extrabold text-rose-500 uppercase">Sun</span>
+          <span class="text-[10px] font-extrabold text-slate-400 uppercase">Mon</span>
+          <span class="text-[10px] font-extrabold text-slate-400 uppercase">Tue</span>
+          <span class="text-[10px] font-extrabold text-slate-400 uppercase">Wed</span>
+          <span class="text-[10px] font-extrabold text-slate-400 uppercase">Thu</span>
+          <span class="text-[10px] font-extrabold text-slate-400 uppercase">Fri</span>
+          <span class="text-[10px] font-extrabold text-slate-500 uppercase">Sat</span>
+        </div>
+        <!-- Days Grid -->
+        <div id="calendarDaysGrid" class="grid grid-cols-7 gap-1 text-center"></div>
+      </div>
+
+      <!-- Selected Dates Pills & Actions -->
+      <div class="p-4 bg-slate-50 border-t border-slate-100 flex flex-col gap-3">
+        <div class="flex items-center justify-between text-xs">
+          <span class="font-bold text-slate-600">Selected Dates (<span id="selectedCountBadge" class="text-pink-600 font-extrabold">0</span>):</span>
+          <span class="text-[11px] text-slate-400">Press Enter ↵ to submit</span>
+        </div>
+        <div id="selectedDatesPills" class="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto"></div>
+
+        <div class="flex gap-2 pt-1">
+          <button type="button" onclick="closeDatePickerModal()" class="flex-1 py-2.5 text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl transition">
+            Cancel
+          </button>
+          <button type="button" id="btnConfirmAttendance" onclick="commitDateAttendance()" class="flex-1 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5">
+            <span>Confirm (Enter)</span>
+            <i class="ph ph-check font-bold"></i>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= DTE HOLIDAYS ROSTER MODAL ================= -->
+  <div id="holidaysModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[85vh]">
+          <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center text-xl font-bold">
+                <i class="ph ph-calendar-x"></i>
+              </div>
+              <div>
+                <h3 class="text-base font-extrabold text-slate-900">DTE / Assam 2026 Holidays</h3>
+                <p class="text-[11px] text-slate-400">Official Gazetted list, Sundays & 2nd/4th Saturdays (Strictly non-working)</p>
+              </div>
+            </div>
+            <button onclick="closeHolidaysModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition">
+              <i class="ph ph-x font-bold"></i>
+            </button>
+          </div>
+
+          <!-- Add Custom Holiday (Useful if student has college-specific circular/PDF) -->
+          <div class="p-4 bg-slate-50 border-b border-slate-100 flex items-center gap-2">
+            <input type="date" id="newHolidayDate" class="bg-white border border-slate-200 text-xs rounded-xl px-2.5 py-1.5 outline-none font-medium">
+            <input type="text" id="newHolidayName" placeholder="Add Institute Holiday (e.g., Tech Fest)" class="flex-1 bg-white border border-slate-200 text-xs rounded-xl px-2.5 py-1.5 outline-none font-medium">
+            <button onclick="addCustomHoliday()" class="px-3 py-1.5 bg-pink-600 hover:bg-pink-700 text-white font-bold text-xs rounded-xl transition whitespace-nowrap">
+              + Add
+            </button>
+          </div>
+
+          <!-- Holidays List Container -->
+          <div id="holidaysListContainer" class="p-4 overflow-y-auto space-y-2 flex-grow">
+            <!-- Rendered by renderHolidaysList() -->
+          </div>
+
+          <div class="p-3 bg-slate-50 text-center text-[11px] text-slate-400 border-t border-slate-100">
+            Sundays and 2nd & 4th Saturdays are automatically restricted from attendance marking.
+          </div>
+        </div>
+      </div>
+
+  <!-- ================= TIMETABLE SCHEDULE MODAL ================= -->
+  <div id="timetableModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[85vh]">
+      <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center text-xl font-bold">
+            <i class="ph ph-calendar-blank"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-extrabold text-slate-900">Weekly Class Routine</h3>
+            <p class="text-[11px] text-slate-400">Toggle days each subject has scheduled lectures</p>
+          </div>
+        </div>
+        <button onclick="closeTimetableModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition">
+          <i class="ph ph-x font-bold"></i>
+        </button>
+      </div>
+
+      <!-- Routine subject items -->
+      <div id="timetableListContainer" class="p-4 overflow-y-auto space-y-3 flex-grow">
+        <!-- Filled by renderTimetableList() -->
+      </div>
+
+      <div class="p-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs">
+        <span class="text-slate-400 text-[11px]">Unselected days show as <b>No Class</b> in calendar</span>
+        <button onclick="closeTimetableModal()" class="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs transition">
+          Save & Done
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= JAVASCRIPT LOGIC ================= -->
+  <script>
+    // Strict Branch to Subject Mappings
+    const BRANCH_SUBJECTS = {
+      CSE: ["Chemistry", "Maths-I", "PPS", "Yoga", "EM", "UHV"],
+      ME:  ["Physics", "Maths-I", "BEE", "EG", "TRW", "DT"],
+      CE:  ["Physics", "Maths-I", "BEE", "EG", "TRW", "DT"]
+    };
+
+    // Official Weekly Timetable extracted directly from Dhemaji Engineering College B.Tech 1st Sem Routine
+    // 1 = Monday, 2 = Tuesday, 3 = Wednesday, 4 = Thursday, 5 = Friday, 6 = Saturday
+    const DEFAULT_TIMETABLE = {
+      CSE: {
+        "Chemistry": [2, 4, 5, 6],    // Tue, Thu, Fri, Sat
+        "Maths-I":   [1, 4, 5, 6],    // Mon, Thu, Fri, Sat
+        "PPS":       [1, 4],          // Mon, Thu
+        "Yoga":      [2, 3],          // Tue, Wed
+        "EM":        [2, 5],          // Tue, Fri
+        "UHV":       [3, 4]           // Wed, Thu
+      },
+      ME: {
+        "Physics":   [2, 3, 6],       // Tue, Wed, Sat (inc. PHY Tutorial)
+        "Maths-I":   [2, 3, 4],       // Tue, Wed, Thu (inc. MATHS Tutorial)
+        "BEE":       [3, 4, 5],       // Wed, Thu, Fri
+        "EG":        [1, 2, 5, 6],    // Mon, Tue, Fri, Sat
+        "TRW":       [1, 2, 4],       // Mon, Tue, Thu
+        "DT":        [4, 5]           // Thu, Fri
+      },
+      CE: {
+        "Physics":   [2, 3, 6],       // Tue, Wed, Sat
+        "Maths-I":   [2, 3, 4],       // Tue, Wed, Thu
+        "BEE":       [3, 4, 5],       // Wed, Thu, Fri
+        "EG":        [1, 2, 5, 6],    // Mon, Tue, Fri, Sat
+        "TRW":       [1, 2, 4],       // Mon, Tue, Thu
+        "DT":        [4, 5]           // Thu, Fri
+      }
+    };
+
+    // Official 2026 Holiday Schedule (Government of Assam GAD Notification / DTE 2026)
+    const DEFAULT_DTE_HOLIDAYS = {
+      "2026-01-14": "Magh Bihu & Tusu Puja",
+      "2026-01-15": "Magh Bihu (Day 2)",
+      "2026-01-23": "Netaji's Birthday",
+      "2026-01-26": "Republic Day",
+      "2026-01-27": "Gwthar Bathou San",
+      "2026-01-31": "Me-Dam-Me-Phi",
+      "2026-02-01": "Bir Chilaray Divas",
+      "2026-03-03": "Dol Jatra (Holi)",
+      "2026-03-21": "Id-Ul-Fitr",
+      "2026-04-03": "Good Friday",
+      "2026-04-14": "Bohag Bihu",
+      "2026-04-15": "Bohag Bihu",
+      "2026-04-16": "Bohag Bihu",
+      "2026-04-18": "Tithi of Damodar Deva",
+      "2026-04-21": "Sati Sadhini Divas",
+      "2026-05-01": "May Day & Buddha Purnima",
+      "2026-05-27": "Id-ul-Zuha",
+      "2026-06-01": "Janmotsav of Sri Sri Madhabdeva",
+      "2026-08-15": "Independence Day",
+      "2026-09-01": "Tirubhav Tithi of Sri Sri Madhabdeva",
+      "2026-09-04": "Janmastomi",
+      "2026-09-12": "Tirubhav Tithi of Srimanta Sankardeva",
+      "2026-09-21": "Janmotsav of Srimanta Sankardeva",
+      "2026-09-22": "Karam Puja",
+      "2026-10-02": "Birthday of Mahatma Gandhi",
+      "2026-10-18": "Kati Bihu & Durga Puja",
+      "2026-10-19": "Durga Puja (Maha Saptami / Ashtami)",
+      "2026-10-20": "Durga Puja (Maha Navami)",
+      "2026-10-21": "Durga Puja & Vijaya Dashami",
+      "2026-11-08": "Kali Puja & Diwali",
+      "2026-11-11": "Bhatri Dwitiya (Bhai Dooj)",
+      "2026-11-15": "Chhath Puja",
+      "2026-11-24": "Guru Nanak's Birthday & Lachit Divas",
+      "2026-12-02": "Asom Divas (Su-Ka-Pha Divas)",
+      "2026-12-25": "Christmas Day"
+    };
+
+    const HOLIDAY_SCHEMA_VERSION = "2026_ASSAM_DTE_V2";
+
+    // State Variables
+    let currentStudent = null;
+    let holidaysMap = {};
+
+    // Date Picker State
+    let activeSubject = null;
+    let activeActionType = 'PRESENT'; // 'PRESENT' or 'ABSENT'
+    let calCurrentMonth = new Date().getMonth();
+    let calCurrentYear = new Date().getFullYear();
+    let selectedDatesSet = new Set();
+
+    // Safe storage helper for InfinityFree / strict sandbox environments
+    function safeGetStorage(key, fallback = null) {
+      try {
+        const val = localStorage.getItem(key);
+        return val ? JSON.parse(val) : fallback;
+      } catch (err) {
+        console.warn('Storage read warning:', err);
+        return fallback;
+      }
+    }
+
+    function safeSetStorage(key, value) {
+      try {
+        localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
+      } catch (err) {
+        console.warn('Storage write warning:', err);
+      }
+    }
+
+    // Run on startup
+    function initApp() {
+      try {
+        loadHolidays();
+        previewBranchSubjects();
+        checkSavedSession();
+      } catch (e) {
+        console.error("Initialization error:", e);
+        showAuthScreen();
+      }
+
+      // Listen for 'Enter' key when Date Picker modal is open
+      window.addEventListener('keydown', (e) => {
+        const modal = document.getElementById('datePickerModal');
+        if (modal && !modal.classList.contains('hidden') && e.key === 'Enter') {
+          e.preventDefault();
+          commitDateAttendance();
+        }
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initApp);
+    } else {
+      initApp();
+    }
+
+    // Load DTE Holidays with local overrides
+    function loadHolidays() {
+      const storedVersion = localStorage.getItem('attendo_dte_version');
+      const stored = safeGetStorage('attendo_dte_holidays', null);
+
+      if (stored && storedVersion === HOLIDAY_SCHEMA_VERSION) {
+        holidaysMap = stored;
+      } else {
+        holidaysMap = { ...DEFAULT_DTE_HOLIDAYS };
+        safeSetStorage('attendo_dte_holidays', holidaysMap);
+        safeSetStorage('attendo_dte_version', HOLIDAY_SCHEMA_VERSION);
+      }
+    }
+
+    function isDateHoliday(dateStr) {
+      // 1. Direct gazetted holiday match from notification
+      if (holidaysMap[dateStr]) {
+        return holidaysMap[dateStr];
+      }
+
+      // Check day of the week
+      const parts = dateStr.split('-');
+      const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      const dayOfWeek = d.getDay(); // 0 = Sunday, 6 = Saturday
+
+      // 2. All Sundays are public holidays
+      if (dayOfWeek === 0) {
+        return "Sunday (Non-working day)";
+      }
+
+      // 3. Clause 4 & 7: All 2nd Saturdays and 4th Saturdays are observed as Holidays
+      if (dayOfWeek === 6) {
+        const dayOfMonth = d.getDate();
+        const saturdayIndex = Math.ceil(dayOfMonth / 7);
+        if (saturdayIndex === 2) {
+          return "2nd Saturday (Official Holiday)";
+        }
+        if (saturdayIndex === 4) {
+          return "4th Saturday (Official Holiday)";
+        }
+      }
+
+      return null;
+    }
+
+    // Check whether a specific subject has a class scheduled on this date according to the timetable
+    function isNoClassDay(subjectName, dateStr) {
+      if (!currentStudent || !subjectName) return false;
+      const parts = dateStr.split('-');
+      const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      const dayOfWeek = d.getDay(); // 0 = Sun, 1 = Mon ... 6 = Sat
+
+      // Sundays are handled under holiday rules
+      if (dayOfWeek === 0) return false;
+
+      const schedule = (currentStudent.timetable && currentStudent.timetable[subjectName]) || 
+                       (DEFAULT_TIMETABLE[currentStudent.branch] && DEFAULT_TIMETABLE[currentStudent.branch][subjectName]) || 
+                       [1, 2, 3, 4, 5]; // Default Mon-Fri if not specified
+
+      return !schedule.includes(dayOfWeek);
+    }
+
+    function checkSavedSession() {
+      const savedUser = safeGetStorage('attendo_active_user', null);
+      if (savedUser && savedUser.username) {
+        launchDashboard(savedUser);
+        return;
+      }
+      showAuthScreen();
+    }
+
+    // Toggle between Login & Sign Up
+    function switchAuthTab(mode) {
+      const loginForm = document.getElementById('loginForm');
+      const signupForm = document.getElementById('signupForm');
+      const tabBtnLogin = document.getElementById('tabBtnLogin');
+      const tabBtnSignup = document.getElementById('tabBtnSignup');
+      hideAuthAlert();
+
+      if (mode === 'login') {
+        loginForm.classList.remove('hidden');
+        signupForm.classList.add('hidden');
+        tabBtnLogin.className = "flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all duration-200 bg-white text-slate-900 shadow-sm";
+        tabBtnSignup.className = "flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all duration-200 text-slate-500 hover:text-slate-800";
+      } else {
+        loginForm.classList.add('hidden');
+        signupForm.classList.remove('hidden');
+        tabBtnSignup.className = "flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all duration-200 bg-white text-slate-900 shadow-sm";
+        tabBtnLogin.className = "flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all duration-200 text-slate-500 hover:text-slate-800";
+        previewBranchSubjects();
+      }
+    }
+
+    // Show tags for selected branch in sign up
+    function previewBranchSubjects() {
+      const branch = document.getElementById('regBranch').value;
+      const subjects = BRANCH_SUBJECTS[branch] || [];
+      const container = document.getElementById('subjectTagsPreview');
+      container.innerHTML = subjects.map(s => `
+        <span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-white text-pink-700 border border-pink-200">
+          ${s}
+        </span>
+      `).join('');
+    }
+
+    function togglePass(inputId, iconId) {
+      const input = document.getElementById(inputId);
+      const icon = document.getElementById(iconId);
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'ph ph-eye-slash text-lg';
+      } else {
+        input.type = 'password';
+        icon.className = 'ph ph-eye text-lg';
+      }
+    }
+
+    function showAuthAlert(msg, isSuccess = false) {
+      const box = document.getElementById('authAlert');
+      box.innerText = msg;
+      box.className = `mb-4 p-3 rounded-xl text-xs font-semibold ${isSuccess ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}`;
+      box.classList.remove('hidden');
+    }
+
+    function hideAuthAlert() {
+      document.getElementById('authAlert').classList.add('hidden');
+    }
+
+    // ================= REGISTRATION (SIGN UP) =================
+    function handleSignup(e) {
+      e.preventDefault();
+      hideAuthAlert();
+
+      const fullName = document.getElementById('regFullName').value.trim();
+      const username = document.getElementById('regUsername').value.trim().toLowerCase();
+      const branch = document.getElementById('regBranch').value;
+      const password = document.getElementById('regPassword').value;
+      const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+      if (!fullName || !username || !password) {
+        showAuthAlert("Please fill in all details.");
+        return;
+      }
+
+      if (password.length < 4) {
+        showAuthAlert("Password should be at least 4 characters long.");
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        showAuthAlert("Passwords do not match. Please verify.");
+        return;
+      }
+
+      // Check if username is already registered in local storage
+      const existingAccounts = safeGetStorage('attendo_registered_accounts', {});
+      if (existingAccounts[username]) {
+        showAuthAlert("This username / roll number is already registered! Please Log In.");
+        return;
+      }
+
+      // Initialize subject data with 0 attended & 0 total, plus records object
+      const initialSubjects = {};
+      const subjectList = BRANCH_SUBJECTS[branch] || [];
+      subjectList.forEach(sub => {
+        initialSubjects[sub] = { attended: 0, total: 0, dates: {} };
+      });
+
+      const newAccount = {
+        fullName: fullName,
+        username: username,
+        branch: branch,
+        password: password,
+        subjects: initialSubjects,
+        timetable: JSON.parse(JSON.stringify(DEFAULT_TIMETABLE[branch] || {})),
+        logs: [],
+        createdAt: new Date().toLocaleDateString()
+      };
+
+      // Save account into local storage
+      existingAccounts[username] = newAccount;
+      safeSetStorage('attendo_registered_accounts', existingAccounts);
+      safeSetStorage('attendo_active_user', newAccount);
+
+      launchDashboard(newAccount);
+      showToast(`Welcome to MyAttendance, ${fullName}!`);
+    }
+
+    // ================= LOGIN =================
+    function handleLogin(e) {
+      e.preventDefault();
+      hideAuthAlert();
+
+      const username = document.getElementById('loginUsername').value.trim().toLowerCase();
+      const password = document.getElementById('loginPassword').value;
+
+      const existingAccounts = safeGetStorage('attendo_registered_accounts', {});
+      const account = existingAccounts[username];
+
+      if (!account) {
+        showAuthAlert("No account found with this username. Please Sign Up first!");
+        return;
+      }
+
+      if (account.password !== password) {
+        showAuthAlert("Incorrect password. Please try again.");
+        return;
+      }
+
+      // Verify all branch subjects exist in case branch schema was updated
+      const branchSubjects = BRANCH_SUBJECTS[account.branch] || [];
+      if (!account.subjects) account.subjects = {};
+      if (!account.timetable) {
+        account.timetable = JSON.parse(JSON.stringify(DEFAULT_TIMETABLE[account.branch] || {}));
+      }
+      branchSubjects.forEach(s => {
+        if (!account.subjects[s]) {
+          account.subjects[s] = { attended: 0, total: 0, dates: {} };
+        } else if (!account.subjects[s].dates) {
+          account.subjects[s].dates = {};
+        }
+        if (!account.timetable[s]) {
+          account.timetable[s] = DEFAULT_TIMETABLE[account.branch]?.[s] || [1, 2, 3, 4, 5];
+        }
+      });
+
+      existingAccounts[username] = account;
+      safeSetStorage('attendo_registered_accounts', existingAccounts);
+      safeSetStorage('attendo_active_user', account);
+
+      launchDashboard(account);
+      showToast(`Welcome back, ${account.fullName}!`);
+    }
+
+    // ================= LOGOUT =================
+    function handleLogout() {
+      currentStudent = null;
+      try {
+        localStorage.removeItem('attendo_active_user');
+      } catch(e) {}
+      document.getElementById('dashboardScreen').classList.add('hidden');
+      document.getElementById('authScreen').classList.remove('hidden');
+      document.getElementById('loginForm').reset();
+      showAuthAlert("You have logged out.", true);
+    }
+
+    function showAuthScreen() {
+      document.getElementById('dashboardScreen').classList.add('hidden');
+      document.getElementById('authScreen').classList.remove('hidden');
+    }
+
+    // ================= DASHBOARD LAUNCH & RENDER =================
+    function launchDashboard(student) {
+      currentStudent = student;
+      document.getElementById('authScreen').classList.add('hidden');
+      document.getElementById('dashboardScreen').classList.remove('hidden');
+
+      // Populate headers
+      document.getElementById('welcomeUserGreeting').innerText = `Hey, ${student.fullName.split(' ')[0]} 👋`;
+      document.getElementById('userNameHeader').innerText = student.fullName;
+      document.getElementById('userHandleHeader').innerText = `@${student.username}`;
+      document.getElementById('userBranchBadge').innerText = `${student.branch} Branch`;
+
+      renderSubjectCards();
+      renderLogs();
+    }
+
+    function saveCurrentStudentState() {
+      if (!currentStudent) return;
+      const existingAccounts = JSON.parse(localStorage.getItem('attendo_registered_accounts') || '{}');
+      existingAccounts[currentStudent.username] = currentStudent;
+      localStorage.setItem('attendo_registered_accounts', JSON.stringify(existingAccounts));
+      localStorage.setItem('attendo_active_user', JSON.stringify(currentStudent));
+    }
+
+    // Calculate attendance percentage and target guidance
+    function getSubjectAnalysis(attended, total) {
+      if (total === 0) {
+        return {
+          pct: 100,
+          color: 'emerald',
+          status: 'Fresh Start (No classes yet)',
+          guidance: 'No classes conducted yet. Mark your first lecture!'
+        };
+      }
+
+      const pct = Math.round((attended / total) * 100);
+
+      if (pct >= 75) {
+        // Safe: calculate how many classes they can afford to miss
+        // (attended) / (total + x) >= 0.75 => x <= (attended / 0.75) - total
+        const safeToMiss = Math.floor((attended / 0.75) - total);
+        return {
+          pct: pct,
+          color: 'emerald',
+          status: 'Eligible for Exams',
+          guidance: safeToMiss > 0 ? `You can safely miss the next ${safeToMiss} class${safeToMiss > 1 ? 'es' : ''} & maintain 75%.` : `On the edge! Don't miss the next class.`
+        };
+      } else {
+        // Shortage: calculate how many consecutive classes to attend to reach 75%
+        // (attended + x) / (total + x) >= 0.75 => x >= (0.75*total - attended) / 0.25 => 3*total - 4*attended
+        const needToAttend = Math.ceil((3 * total - 4 * attended));
+        return {
+          pct: pct,
+          color: pct >= 65 ? 'amber' : 'rose',
+          status: 'Attendance Shortage',
+          guidance: `Attend the next ${needToAttend} class${needToAttend > 1 ? 'es' : ''} continuously to reach 75%.`
+        };
+      }
+    }
+
+    function renderSubjectCards() {
+      const grid = document.getElementById('subjectsGrid');
+      grid.innerHTML = '';
+
+      const subjects = BRANCH_SUBJECTS[currentStudent.branch] || [];
+      let grandAttended = 0;
+      let grandTotal = 0;
+
+      subjects.forEach(subjectName => {
+        const data = currentStudent.subjects[subjectName] || { attended: 0, total: 0 };
+        grandAttended += data.attended;
+        grandTotal += data.total;
+
+        const analysis = getSubjectAnalysis(data.attended, data.total);
+        const card = document.createElement('div');
+        card.className = "bg-white rounded-3xl p-5 border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between";
+
+        const badgeBg = analysis.color === 'emerald' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
+                        (analysis.color === 'amber' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-rose-50 text-rose-700 border-rose-200');
+        
+        const barBg = analysis.color === 'emerald' ? 'bg-emerald-500' : (analysis.color === 'amber' ? 'bg-amber-500' : 'bg-rose-500');
+
+        card.innerHTML = `
+          <div>
+            <!-- Header -->
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">${currentStudent.branch} Subject</span>
+                <h4 class="text-base font-extrabold text-slate-900 leading-snug">${subjectName}</h4>
+              </div>
+              <div class="px-2.5 py-1 rounded-xl text-xs font-black border ${badgeBg}">
+                ${data.total === 0 ? '100%' : analysis.pct + '%'}
+              </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="flex items-center justify-between text-xs text-slate-500 my-2">
+              <span>Attended: <b class="text-slate-800">${data.attended}</b> / ${data.total}</span>
+              <span>Missed: <b class="text-rose-600">${data.total - data.attended}</b></span>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden my-2">
+              <div class="h-2.5 rounded-full transition-all duration-300 ${barBg}" style="width: ${data.total === 0 ? '100%' : analysis.pct + '%'}"></div>
+            </div>
+
+            <!-- Guidance Message -->
+            <p class="text-[11px] font-semibold text-slate-500 mt-2.5 flex items-center gap-1.5">
+              <i class="ph ph-info text-pink-600 text-sm"></i>
+              <span>${analysis.guidance}</span>
+            </p>
+          </div>
+
+          <!-- Date-wise Marking Action Buttons -->
+          <div class="pt-4 mt-3 border-t border-slate-100 flex items-center gap-2">
+            <button onclick="openDatePickerModal('${subjectName}', 'PRESENT')" class="flex-1 py-2 px-3 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-bold text-xs rounded-xl transition shadow-sm shadow-emerald-500/20 flex items-center justify-center gap-1.5">
+              <i class="ph ph-calendar-plus font-bold text-sm"></i>
+              <span>+ Present</span>
+            </button>
+            <button onclick="openDatePickerModal('${subjectName}', 'ABSENT')" class="flex-1 py-2 px-3 bg-rose-500 hover:bg-rose-600 active:scale-95 text-white font-bold text-xs rounded-xl transition shadow-sm shadow-rose-500/20 flex items-center justify-center gap-1.5">
+              <i class="ph ph-calendar-x font-bold text-sm"></i>
+              <span>+ Absent</span>
+            </button>
+            <button onclick="undoLastSubjectAction('${subjectName}')" title="Undo last action" class="p-2 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-600 rounded-xl transition border border-slate-200">
+              <i class="ph ph-arrow-u-up-left font-bold text-base"></i>
+            </button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+
+      // Update Overall Summary
+      updateGrandSummary(grandAttended, grandTotal);
+    }
+
+    function updateGrandSummary(grandAttended, grandTotal) {
+      const badge = document.getElementById('totalPctBadge');
+      const attendedCount = document.getElementById('totalAttendedCount');
+      const heldCount = document.getElementById('totalHeldCount');
+      const verdict = document.getElementById('eligibilityVerdict');
+
+      attendedCount.innerText = grandAttended;
+      heldCount.innerText = grandTotal;
+
+      const grandPct = grandTotal === 0 ? 100 : Math.round((grandAttended / grandTotal) * 100);
+      badge.innerText = `${grandPct}%`;
+
+      if (grandPct >= 75) {
+        badge.className = "w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl text-white shadow-md bg-emerald-500 shadow-emerald-500/20";
+      } else if (grandPct >= 65) {
+        badge.className = "w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl text-white shadow-md bg-amber-500 shadow-amber-500/20";
+      } else {
+        badge.className = "w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl text-white shadow-md bg-rose-500 shadow-rose-500/20";
+      }
+
+      verdict.innerText = grandPct >= 75 ? "✓ Examination Eligible (Above 75%)" : "⚠ Shortage Alert (Below 75%)";
+      verdict.className = grandPct >= 75 ? "text-[11px] font-extrabold text-emerald-600 mt-0.5" : "text-[11px] font-extrabold text-rose-600 mt-0.5";
+    }
+
+    // ================= DATE-WISE ATTENDANCE CALENDAR MODAL =================
+    function openDatePickerModal(subjectName, actionType) {
+      activeSubject = subjectName;
+      activeActionType = actionType;
+      selectedDatesSet.clear();
+
+      // Default to today if it's not a holiday
+      const todayStr = getFormattedDate(new Date());
+      if (!isDateHoliday(todayStr)) {
+        selectedDatesSet.add(todayStr);
+      }
+
+      const isPres = actionType === 'PRESENT';
+      const badge = document.getElementById('datePickerActionBadge');
+      const subjectSpan = document.getElementById('datePickerSubjectName');
+      const confirmBtn = document.getElementById('btnConfirmAttendance');
+
+      badge.innerText = isPres ? 'Mark Present' : 'Mark Absent';
+      badge.className = isPres ? 
+        'px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800' : 
+        'px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 text-rose-800';
+
+      confirmBtn.className = isPres ? 
+        'flex-1 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5' : 
+        'flex-1 py-2.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition shadow-md shadow-rose-600/20 flex items-center justify-center gap-1.5';
+
+      confirmBtn.innerHTML = `<span>Confirm ${isPres ? 'Present' : 'Absent'} (Enter)</span> <i class="ph ph-check font-bold"></i>`;
+
+      subjectSpan.innerText = subjectName;
+
+      // Sync calendar view month with today
+      const today = new Date();
+      calCurrentMonth = today.getMonth();
+      calCurrentYear = today.getFullYear();
+
+      renderCalendarGrid();
+      updateSelectedPills();
+      document.getElementById('datePickerModal').classList.remove('hidden');
+    }
+
+    function closeDatePickerModal() {
+      document.getElementById('datePickerModal').classList.add('hidden');
+      selectedDatesSet.clear();
+      activeSubject = null;
+    }
+
+    function changeCalMonth(delta) {
+      calCurrentMonth += delta;
+      if (calCurrentMonth > 11) {
+        calCurrentMonth = 0;
+        calCurrentYear += 1;
+      } else if (calCurrentMonth < 0) {
+        calCurrentMonth = 11;
+        calCurrentYear -= 1;
+      }
+      renderCalendarGrid();
+    }
+
+    function getFormattedDate(d) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function renderCalendarGrid() {
+      const monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+      ];
+      document.getElementById('calMonthYearTitle').innerText = `${monthNames[calCurrentMonth]} ${calCurrentYear}`;
+
+      const grid = document.getElementById('calendarDaysGrid');
+      grid.innerHTML = '';
+
+      const firstDayIndex = new Date(calCurrentYear, calCurrentMonth, 1).getDay();
+      const totalDays = new Date(calCurrentYear, calCurrentMonth + 1, 0).getDate();
+
+      // Pad previous month blanks
+      for (let i = 0; i < firstDayIndex; i++) {
+        const blank = document.createElement('div');
+        blank.className = "p-2";
+        grid.appendChild(blank);
+      }
+
+      // Check existing marks for this subject
+      const subjectDates = (currentStudent && currentStudent.subjects[activeSubject] && currentStudent.subjects[activeSubject].dates) || {};
+
+      for (let day = 1; day <= totalDays; day++) {
+        const dateObj = new Date(calCurrentYear, calCurrentMonth, day);
+        const dateStr = getFormattedDate(dateObj);
+        const holidayReason = isDateHoliday(dateStr);
+        const isNoClass = !holidayReason && isNoClassDay(activeSubject, dateStr);
+
+        const dayBtn = document.createElement('button');
+        dayBtn.type = 'button';
+        dayBtn.innerText = day;
+
+        if (holidayReason) {
+          // Disabled holiday (Red)
+          dayBtn.className = "p-2 rounded-xl text-xs font-semibold cal-day-holiday transition group relative";
+          dayBtn.title = `Holiday: ${holidayReason}`;
+          dayBtn.onclick = () => showToast(`Holiday: ${holidayReason}`);
+          dayBtn.innerHTML = `${day}<span class="block text-[8px] font-black truncate max-w-full">Off</span>`;
+        } else if (isNoClass) {
+          // Timetable specifies no class on this day for this subject (Amber)
+          dayBtn.className = "p-2 rounded-xl text-xs font-semibold cal-day-noclass transition group relative";
+          dayBtn.title = `No ${activeSubject} class on this day according to routine`;
+          dayBtn.onclick = () => showToast(`No ${activeSubject} class scheduled on this weekday.`);
+          dayBtn.innerHTML = `${day}<span class="block text-[8px] font-black truncate max-w-full">No Class</span>`;
+        } else {
+          // Regular selectable day
+          const isSelected = selectedDatesSet.has(dateStr);
+          const alreadyMarked = subjectDates[dateStr]; // 'PRESENT' or 'ABSENT'
+
+          let baseClass = "p-2 rounded-xl text-xs font-bold transition flex flex-col items-center justify-center ";
+          if (isSelected) {
+            baseClass += "cal-day-selected";
+          } else if (alreadyMarked === 'PRESENT') {
+            baseClass += "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100";
+          } else if (alreadyMarked === 'ABSENT') {
+            baseClass += "bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100";
+          } else {
+            baseClass += "bg-slate-50 hover:bg-slate-200 text-slate-700";
+          }
+
+          dayBtn.className = baseClass;
+          if (alreadyMarked) {
+            dayBtn.innerHTML = `${day}<span class="text-[8px] font-black ${alreadyMarked === 'PRESENT' ? 'text-emerald-600' : 'text-rose-600'}">${alreadyMarked === 'PRESENT' ? 'P' : 'A'}</span>`;
+          }
+
+          dayBtn.onclick = () => toggleSelectDate(dateStr);
+        }
+
+        grid.appendChild(dayBtn);
+      }
+    }
+
+    function toggleSelectDate(dateStr) {
+      if (selectedDatesSet.has(dateStr)) {
+        selectedDatesSet.delete(dateStr);
+      } else {
+        selectedDatesSet.add(dateStr);
+      }
+      renderCalendarGrid();
+      updateSelectedPills();
+    }
+
+    function selectShortcutDate(type) {
+      const d = new Date();
+      if (type === 'yesterday') d.setDate(d.getDate() - 1);
+      if (type === 'tomorrow') d.setDate(d.getDate() + 1);
+
+      const dateStr = getFormattedDate(d);
+      const hol = isDateHoliday(dateStr);
+      if (hol) {
+        showToast(`Cannot select ${type}: Holiday (${hol})`);
+        return;
+      }
+
+      if (isNoClassDay(activeSubject, dateStr)) {
+        showToast(`Cannot select ${type}: No ${activeSubject} class on this weekday.`);
+        return;
+      }
+
+      calCurrentMonth = d.getMonth();
+      calCurrentYear = d.getFullYear();
+      selectedDatesSet.add(dateStr);
+
+      renderCalendarGrid();
+      updateSelectedPills();
+    }
+
+    function clearSelectedDates() {
+      selectedDatesSet.clear();
+      renderCalendarGrid();
+      updateSelectedPills();
+    }
+
+    function updateSelectedPills() {
+      const container = document.getElementById('selectedDatesPills');
+      const countBadge = document.getElementById('selectedCountBadge');
+      countBadge.innerText = selectedDatesSet.size;
+
+      if (selectedDatesSet.size === 0) {
+        container.innerHTML = `<span class="text-xs text-slate-400 italic">No dates chosen yet. Click a date on the calendar.</span>`;
+        return;
+      }
+
+      container.innerHTML = Array.from(selectedDatesSet).sort().map(d => `
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-pink-100 text-pink-800">
+          ${d}
+          <i class="ph ph-x cursor-pointer hover:text-pink-950" onclick="toggleSelectDate('${d}')"></i>
+        </span>
+      `).join('');
+    }
+
+    // ================= COMMIT ATTENDANCE ON ENTER / CONFIRM =================
+    function commitDateAttendance() {
+      if (!activeSubject) return;
+      if (selectedDatesSet.size === 0) {
+        showToast("Please select at least one date from the calendar!");
+        return;
+      }
+
+      if (!currentStudent.subjects[activeSubject]) {
+        currentStudent.subjects[activeSubject] = { attended: 0, total: 0, dates: {} };
+      }
+      if (!currentStudent.subjects[activeSubject].dates) {
+        currentStudent.subjects[activeSubject].dates = {};
+      }
+
+      const subjectData = currentStudent.subjects[activeSubject];
+      let markedCount = 0;
+
+      selectedDatesSet.forEach(dateStr => {
+        const prevStatus = subjectData.dates[dateStr];
+
+        // Deduct prior if modifying an existing date
+        if (prevStatus === 'PRESENT') {
+          subjectData.attended -= 1;
+          subjectData.total -= 1;
+        } else if (prevStatus === 'ABSENT') {
+          subjectData.total -= 1;
+        }
+
+        // Apply new status
+        subjectData.total += 1;
+        if (activeActionType === 'PRESENT') {
+          subjectData.attended += 1;
+          subjectData.dates[dateStr] = 'PRESENT';
+        } else {
+          subjectData.dates[dateStr] = 'ABSENT';
+        }
+
+        // Add to recent logs
+        const logEntry = {
+          subject: activeSubject,
+          status: activeActionType,
+          date: dateStr,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        if (!currentStudent.logs) currentStudent.logs = [];
+        currentStudent.logs.unshift(logEntry);
+        markedCount++;
+      });
+
+      if (currentStudent.logs && currentStudent.logs.length > 50) {
+        currentStudent.logs = currentStudent.logs.slice(0, 50);
+      }
+
+      saveCurrentStudentState();
+      renderSubjectCards();
+      renderLogs();
+      closeDatePickerModal();
+      showToast(`Marked ${activeActionType === 'PRESENT' ? 'Present' : 'Absent'} for ${markedCount} date(s) in ${activeSubject}!`);
+    }
+
+    function undoLastSubjectAction(subjectName) {
+      const data = currentStudent.subjects[subjectName];
+      if (!data || data.total === 0) {
+        showToast("Nothing to undo for this subject.");
+        return;
+      }
+
+      const logIdx = (currentStudent.logs || []).findIndex(l => l.subject === subjectName);
+      if (logIdx !== -1) {
+        const lastLog = currentStudent.logs[logIdx];
+        if (lastLog.status === 'PRESENT' && data.attended > 0) {
+          data.attended -= 1;
+        }
+        data.total -= 1;
+        if (data.dates && lastLog.date) {
+          delete data.dates[lastLog.date];
+        }
+        currentStudent.logs.splice(logIdx, 1);
+      } else {
+        data.total -= 1;
+        if (data.attended > data.total) data.attended = data.total;
+      }
+
+      saveCurrentStudentState();
+      renderSubjectCards();
+      renderLogs();
+      showToast(`Reverted last record for ${subjectName}.`);
+    }
+
+    let confirmModalCallback = null;
+
+    function promptResetAllSubjects() {
+      confirmModalCallback = () => {
+        const subjects = BRANCH_SUBJECTS[currentStudent.branch] || [];
+        subjects.forEach(s => {
+          currentStudent.subjects[s] = { attended: 0, total: 0, dates: {} };
+        });
+        currentStudent.logs = [];
+
+        saveCurrentStudentState();
+        renderSubjectCards();
+        renderLogs();
+        showToast("All subject metrics and dates reset to zero.");
+      };
+
+      document.getElementById('confirmModal').classList.remove('hidden');
+    }
+
+    function closeConfirmModal(confirmed) {
+      document.getElementById('confirmModal').classList.add('hidden');
+      if (confirmed && typeof confirmModalCallback === 'function') {
+        confirmModalCallback();
+      }
+      confirmModalCallback = null;
+    }
+
+    // ================= TIMETABLE MODAL & ROUTINE CUSTOMIZATION =================
+    function openTimetableModal() {
+      renderTimetableList();
+      document.getElementById('timetableModal').classList.remove('hidden');
+    }
+
+    function closeTimetableModal() {
+      document.getElementById('timetableModal').classList.add('hidden');
+      saveCurrentStudentState();
+    }
+
+    function renderTimetableList() {
+      const container = document.getElementById('timetableListContainer');
+      const subjects = BRANCH_SUBJECTS[currentStudent.branch] || [];
+      const weekdays = [
+        { day: 1, label: 'Mon' },
+        { day: 2, label: 'Tue' },
+        { day: 3, label: 'Wed' },
+        { day: 4, label: 'Thu' },
+        { day: 5, label: 'Fri' },
+        { day: 6, label: 'Sat' }
+      ];
+
+      if (!currentStudent.timetable) {
+        currentStudent.timetable = JSON.parse(JSON.stringify(DEFAULT_TIMETABLE[currentStudent.branch] || {}));
+      }
+
+      container.innerHTML = subjects.map(sub => {
+        const assignedDays = currentStudent.timetable[sub] || [];
+        return `
+          <div class="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-extrabold text-xs text-slate-900">${sub}</span>
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">${assignedDays.length} Classes / Wk</span>
+            </div>
+            <div class="flex gap-1.5 flex-wrap">
+              ${weekdays.map(w => {
+                const active = assignedDays.includes(w.day);
+                return `
+                  <button type="button" onclick="toggleTimetableDay('${sub}', ${w.day})" class="px-2.5 py-1 rounded-lg text-xs font-bold transition ${
+                    active ? 'bg-amber-500 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-400 hover:text-slate-700'
+                  }">
+                    ${w.label}
+                  </button>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleTimetableDay(subject, dayNum) {
+      if (!currentStudent.timetable) {
+        currentStudent.timetable = JSON.parse(JSON.stringify(DEFAULT_TIMETABLE[currentStudent.branch] || {}));
+      }
+      if (!currentStudent.timetable[subject]) {
+        currentStudent.timetable[subject] = [];
+      }
+
+      const list = currentStudent.timetable[subject];
+      const idx = list.indexOf(dayNum);
+      if (idx === -1) {
+        list.push(dayNum);
+      } else {
+        list.splice(idx, 1);
+      }
+      list.sort((a, b) => a - b);
+
+      saveCurrentStudentState();
+      renderTimetableList();
+    }
+
+    // ================= DTE HOLIDAYS MODAL & MANAGEMENT =================
+    function openHolidaysModal() {
+      renderHolidaysList();
+      document.getElementById('holidaysModal').classList.remove('hidden');
+    }
+
+    function closeHolidaysModal() {
+      document.getElementById('holidaysModal').classList.add('hidden');
+    }
+
+    function renderHolidaysList() {
+      const container = document.getElementById('holidaysListContainer');
+      const sortedDates = Object.keys(holidaysMap).sort();
+
+      container.innerHTML = sortedDates.map(dateStr => {
+        const title = holidaysMap[dateStr];
+        const isDefault = DEFAULT_DTE_HOLIDAYS[dateStr];
+        return `
+          <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-100 text-xs">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-sm">
+                <i class="ph ph-calendar-blank"></i>
+              </div>
+              <div>
+                <p class="font-extrabold text-slate-800">${title}</p>
+                <p class="text-[11px] text-slate-400 font-semibold">${dateStr}</p>
+              </div>
+            </div>
+            ${!isDefault ? `
+              <button onclick="removeCustomHoliday('${dateStr}')" class="text-rose-500 hover:text-rose-700 p-1.5 rounded-lg hover:bg-rose-50 transition" title="Remove custom holiday">
+                <i class="ph ph-trash text-base"></i>
+              </button>
+            ` : `
+              <span class="text-[10px] font-bold text-slate-400 bg-slate-200/60 px-2 py-0.5 rounded-md">DTE Official</span>
+            `}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function addCustomHoliday() {
+      const date = document.getElementById('newHolidayDate').value;
+      const name = document.getElementById('newHolidayName').value.trim();
+
+      if (!date || !name) {
+        showToast("Please provide both a valid date and a holiday name.");
+        return;
+      }
+
+      holidaysMap[date] = name;
+      localStorage.setItem('attendo_dte_holidays', JSON.stringify(holidaysMap));
+      document.getElementById('newHolidayDate').value = '';
+      document.getElementById('newHolidayName').value = '';
+      renderHolidaysList();
+      showToast(`Added holiday "${name}" on ${date}`);
+    }
+
+    function removeCustomHoliday(dateStr) {
+      delete holidaysMap[dateStr];
+      localStorage.setItem('attendo_dte_holidays', JSON.stringify(holidaysMap));
+      renderHolidaysList();
+      showToast(`Removed custom holiday for ${dateStr}`);
+    }
+
+    // ================= TIMELINE LOGS =================
+    function renderLogs() {
+      const container = document.getElementById('logsContainer');
+      const logs = currentStudent.logs || [];
+
+      if (logs.length === 0) {
+        container.innerHTML = `
+          <div class="py-6 text-center text-slate-400 text-xs font-medium">
+            <i class="ph ph-calendar-blank text-2xl text-slate-300 block mb-1"></i>
+            No classes marked yet. Tap + Present or + Absent above to choose dates!
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = logs.slice(0, 15).map(log => {
+        const isPres = log.status === 'PRESENT';
+        return `
+          <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+            <div class="flex items-center gap-2.5">
+              <span class="w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs ${
+                isPres ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+              }">
+                ${isPres ? 'P' : 'A'}
+              </span>
+              <div>
+                <p class="font-bold text-slate-800 leading-tight">${log.subject}</p>
+                <p class="text-[10px] text-slate-400 font-semibold">Date: ${log.date} &bull; ${log.timestamp}</p>
+              </div>
+            </div>
+            <span class="text-[11px] font-bold ${isPres ? 'text-emerald-600' : 'text-rose-600'}">
+              ${isPres ? '+1 Attended' : '+1 Missed'}
+            </span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function clearHistoryLogs() {
+      currentStudent.logs = [];
+      saveCurrentStudentState();
+      renderLogs();
+      showToast("History logs cleared.");
+    }
+
+    // ================= TOAST UTILITY =================
+    function showToast(message) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = "pointer-events-auto bg-slate-900/95 backdrop-blur text-white text-xs font-semibold px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2 border border-slate-800 transition-all transform translate-y-1";
+      toast.innerHTML = `<i class="ph ph-sparkle text-pink-400 text-base"></i> <span>${message}</span>`;
+      
+      container.appendChild(toast);
+      setTimeout(() => toast.classList.remove('translate-y-1'), 10);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 2500);
+    }
+  </script>
+</body>
+</html>
